@@ -1,16 +1,70 @@
-# merchant_product_management
+📦 Merchant Product Management App (Flutter)
 
-A new Flutter project.
+📌 Tech Stack
+Flutter (latest stable)
+Bloc / Cubit
+Drift (SQLite)
+Connectivity Plus
+Clean Architecture
+JSON Server (mock backend)
 
-## Getting Started
+🏗️ Architecture
 
-This project is a starting point for a Flutter application.
+This project follows Clean Architecture principles:
 
-A few resources to get you started if this is your first Flutter project:
+presentation/
+    ├── bloc/
+    ├── pages/
+    └── widgets/
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+domain/
+    ├── entities/
+    ├── repositories/
+    └── usecases/
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+data/
+    ├── datasource/
+    │     ├── local (Drift)
+    │     └── remote (API)
+    ├── models/
+    ├── mapper/
+    └── services (Sync Engine)
+
+🔄 Data Flow
+Read Flow (Offline-first)
+UI → Bloc → UseCase → Repository
+        ↓
+   Local DB (primary source)
+        ↓
+   Remote API (refresh)
+Write Flow (Offline-first)
+UI → Bloc → UseCase → Repository
+        ↓
+   Local DB (immediate write)
+        ↓
+   Sync Queue (pending operations)
+        ↓
+   SyncService (background execution)
+        ↓
+   Remote API
+
+🧩 State Management
+Bloc / Cubit used for presentation logic
+Separation of concerns:
+UI → Events only
+Bloc → State handling
+Repository → Data coordination
+
+🗄️ Local Storage
+Drift (SQLite abstraction)
+Stores:
+Products
+Pending sync queue
+
+🚀 How to Run
+1. Install dependencies
+`flutter pub get`
+2. Run JSON server
+`json-server --watch db.json --port 3000`
+3. Run app
+`flutter run`
