@@ -1,175 +1,150 @@
-📦 Merchant Product Management App (Flutter)
-📌 Tech Stack
-Flutter (latest stable)
-Bloc / Cubit
-Drift (SQLite)
-Connectivity Plus
-Clean Architecture
-JSON Server (mock backend)
+# 📦 Merchant Product Management App (Flutter)
 
-Overview
+A Flutter application for merchant product management built with an **offline-first** architecture using **Clean Architecture**, **Bloc**, **Drift**, and a mock REST API powered by **JSON Server**.
 
-A production-style Flutter application for managing merchant products with full offline-first support, local persistence, and automatic background synchronization when connectivity is restored.
+---
 
-The system is designed with Clean Architecture, scalable state management, and a robust sync engine to simulate real-world distributed mobile data challenges.
+## 📌 Tech Stack
 
-🧠 Key Features
-📦 Product Management
-Product list with pagination
-Product detail view
-Create product
-Update product
+| Technology | Purpose |
+|------------|---------|
+| Flutter (Latest Stable) | Cross-platform UI |
+| Bloc / Cubit | State Management |
+| Drift (SQLite) | Local Database |
+| Connectivity Plus | Network Monitoring |
+| Clean Architecture | Project Structure |
+| JSON Server | Mock Backend API |
 
-🌐 Offline-First Support
-App works fully offline
-All writes are stored locally first
-UI remains responsive without network
+---
 
-🔄 Background Sync Engine
-Automatic sync when connectivity is restored
-Retry mechanism for failed operations
-Queue-based sync system
+## 🏗️ Project Architecture
 
-⚠️ Conflict Awareness
-Designed to handle HTTP 409 Conflict
-Strategy for resolving stale updates
+The project follows **Clean Architecture** to separate responsibilities and improve maintainability.
 
-📊 UX Enhancements
-Offline indicator
-Sync status indicator
-Pending operations counter
-
-🏗️ Architecture
-
-This project follows Clean Architecture principles:
-
-presentation/
-    ├── bloc/
-    ├── pages/
-    └── widgets/
-
-domain/
-    ├── entities/
-    ├── repositories/
-    └── usecases/
-
-data/
+```text
+lib/
+├── presentation/
+│   ├── bloc/
+│   ├── pages/
+│   └── widgets/
+│
+├── domain/
+│   ├── entities/
+│   ├── repositories/
+│   └── usecases/
+│
+└── data/
     ├── datasource/
-    │     ├── local (Drift)
-    │     └── remote (API)
+    │   ├── local/      # Drift Database
+    │   └── remote/     # REST API
     ├── models/
     ├── mapper/
-    └── services (Sync Engine)
-    
-🔄 Data Flow
-Read Flow (Offline-first)
-UI → Bloc → UseCase → Repository
-        ↓
-   Local DB (primary source)
-        ↓
-   Remote API (refresh)
-Write Flow (Offline-first)
-UI → Bloc → UseCase → Repository
-        ↓
-   Local DB (immediate write)
-        ↓
-   Sync Queue (pending operations)
-        ↓
-   SyncService (background execution)
-        ↓
-   Remote API
-   
-🧠 Offline Strategy
-Principle
+    └── services/       # Sync Engine
+```
 
-"Local database is the source of truth"
+---
 
-Behavior
-All writes (create/update) are saved locally first
-Each mutation is stored in a pending operations queue
-Sync is performed automatically when device reconnects
-UI never depends on network availability
+## 🔄 Data Flow
 
-🔄 Sync Engine Design
-Components
-SyncService
-PendingOperationDao
-NetworkInfo
-ConnectivityService
-Workflow
-1. Detect network reconnection
-2. Load pending operations from local DB
-3. Execute sequentially
-4. On success → remove from queue
-5. On failure → increment retry count
-6. After N retries → drop or mark failed
+### 📖 Read Flow (Offline-First)
 
-⚠️ Conflict Handling Strategy (HTTP 409)
+```mermaid
+flowchart TD
+    UI --> Bloc
+    Bloc --> UseCase
+    UseCase --> Repository
+    Repository --> LocalDB[Local Database]
+    Repository --> RemoteAPI[Remote API]
+    RemoteAPI --> LocalDB
+```
 
-When server detects outdated data:
+**Flow:**
 
-Approach:
-Compare updatedAt timestamp
-If conflict occurs:
-Fetch latest server version
-Merge strategy:
-server wins OR
-last-write-wins (default)
-Notify UI if manual resolution is needed
+1. UI requests data.
+2. Repository returns data from the local database.
+3. Repository fetches fresh data from the API.
+4. Local database is updated.
+5. UI automatically reflects the latest data.
 
-🧩 State Management
-Bloc / Cubit used for presentation logic
-Separation of concerns:
-UI → Events only
-Bloc → State handling
-Repository → Data coordination
+---
 
-🗄️ Local Storage
-Drift (SQLite abstraction)
-Stores:
-Products
-Pending sync queue
-Ensures offline persistence
+### ✍️ Write Flow (Offline-First)
 
-🌐 Network Layer
-Remote API mocked via JSON Server
-Endpoints:
-GET /products?_page
-GET /products/{id}
-POST /products
-PUT /products/{id}
+```mermaid
+flowchart TD
+    UI --> Bloc
+    Bloc --> UseCase
+    UseCase --> Repository
+    Repository --> LocalDB[Local Database]
+    LocalDB --> SyncQueue[Pending Sync Queue]
+    SyncQueue --> SyncService
+    SyncService --> RemoteAPI[Remote API]
+```
 
-🔁 Sync Guarantees
-✔ At-least-once delivery
-✔ Retry with backoff
-✔ Sequential execution
-✔ Crash-safe queue (persisted in DB)
+**Flow:**
 
-📊 UX States
-Offline Mode
-Offline banner visible
-Writes still allowed
-Sync queued
-Syncing Mode
-Sync icon shown
-Pending operations counter updates
+1. User performs an action.
+2. Data is saved immediately to the local database.
+3. The operation is added to the sync queue.
+4. A background sync service sends pending changes to the server.
+5. The queue is cleared after successful synchronization.
 
-🧪 Trade-offs
-1. JSON payload in queue
-✔ simple
-❌ not strongly typed
-✔ acceptable for MVP
-2. Sequential sync (no parallelism)
-✔ avoids race conditions
-❌ slower for large queues
-3. Last-write-wins conflict strategy
-✔ simple to implement
-❌ may overwrite concurrent edits
+---
 
-🚀 How to Run
-1. Install dependencies
-`flutter pub get`
-2. Run JSON server
-`json-server --watch db.json --port 3000`
-3. Run app
-`flutter run`
+## 🧩 State Management
+
+The application uses **Bloc / Cubit** for presentation logic.
+
+### Responsibilities
+
+| Layer | Responsibility |
+|-------|----------------|
+| UI | Sends events and renders state |
+| Bloc / Cubit | Business logic & state management |
+| Use Cases | Execute business rules |
+| Repository | Coordinates local & remote data |
+| Data Sources | Read/write local database and API |
+
+---
+
+## 🗄️ Local Storage
+
+**Drift (SQLite)** is used for offline persistence.
+
+### Stored Data
+
+- 📦 Products
+- 🔄 Pending synchronization queue
+
+---
+
+## 🚀 Getting Started
+
+### 1. Install dependencies
+
+```bash
+flutter pub get
+```
+
+### 2. Start the mock backend
+
+```bash
+json-server --watch db.json --port 3000
+```
+
+### 3. Run the application
+
+```bash
+flutter run
+```
+
+---
+
+## ✅ Features
+
+- Offline-first product management
+- Background synchronization
+- Local persistence with Drift
+- Clean Architecture
+- Bloc/Cubit state management
+- Mock REST API using JSON Server
